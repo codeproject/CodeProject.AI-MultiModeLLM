@@ -1,0 +1,40 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "presentation": {
+                "group": "Start",
+                "hidden": false
+            },
+
+            "name": "Multi-mode LLM",
+            "type": "debugpy",
+            "justMyCode": false,
+            "request": "launch",
+            "program": "multimode_llm_adapter.py",
+            "args": [ "--selftest" ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_LOG_VERBOSITY": "Info",
+                "CPAI_PORT": "32168",
+
+                "MODELS_FOLDER": "${workspaceFolder}/models"
+            },
+
+            "python": "${workspaceFolder}\\bin\\windows\\python311\\venv\\Scripts\\python.exe",
+            "windows": {
+                "python": "${workspaceFolder}/bin/windows/python311/venv/Scripts/python.exe"
+            },
+            "linux": {
+                "python": "${workspaceFolder}/bin/linux/python311/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/bin/macos/python310/venv/bin/python",
+            }
+        }
+    ]
+}

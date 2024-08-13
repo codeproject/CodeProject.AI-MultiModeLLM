@@ -1,0 +1,14 @@
+#! Python3.7
+
+numpy<2
+torch>=2.4
+torchvision
+transformers
+accelerate==0.30.1
+bitsandbytes==0.43.1
+# flash_attn==2.5.8
+# openai==1.30.3
+
+CodeProject-AI-SDK              # Installing the CodeProject.AI SDK
+
+# last line empty
