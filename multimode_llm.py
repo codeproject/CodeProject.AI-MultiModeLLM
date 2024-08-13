@@ -34,8 +34,9 @@ class MultiModeLLM:
                 config.attn_implementation   = attn_implementation
                 config.device_map            = device
                 config.torch_dtype           = 'auto'
+                # config.temperature         = 0.1 - needs do_sample=True
                 config.trust_remote_code     = True
-                config.use_flash_attention_2 = False
+                config.use_flash_attention_2 = use_flash_attention_2
                 
                 self.model = AutoModelForCausalLM.from_pretrained(model_id, 
                                                                   attn_implementation=attn_implementation,
