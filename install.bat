@@ -14,43 +14,82 @@
     @goto:eof
 )
 
-set HF_HUB_DISABLE_SYMLINKS_WARNING=1
 
-REM Download the model file at installation so we can run without a connection to the Internet.
+REM Define the version to check
+set "version=14.40.33810.00"
 
-REM Phi-3
-set sourceUrl=https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main/
-set fileToGet=Phi-3-mini-4k-instruct-q4.gguf
+REM Registry path for the VC++ redistributables
+set "regpath32=HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86"
+set "regpath64=HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
 
-REM if not exist "!moduleDirPath!/models/!fileToGet!" (
-REM     set destination=!downloadDirPath!\!modulesDir!\!moduleDirName!\!fileToGet!
-REM 
-REM     if not exist "!downloadDirPath!\!modulesDir!\!moduleDirName!" mkdir "!downloadDirPath!\!modulesDir!\!moduleDirName!"
-REM     if not exist "!moduleDirPath!\models" mkdir "!moduleDirPath!\models"
-REM 
-REM     call "!utilsScript!" WriteLine "Downloading !fileToGet!" "!color_info!"
-REM 
-REM     powershell -command "Start-BitsTransfer -Source '!sourceUrl!!fileToGet!' -Destination '!destination!'"
-REM     if errorlevel 1 (
-REM         powershell -Command "Get-BitsTransfer | Remove-BitsTransfer"
-REM         powershell -command "Start-BitsTransfer -Source '!sourceUrl!!fileToGet!' -Destination '!destination!'"
-REM     )
-REM     if errorlevel 1 (
-REM         powershell -Command "Invoke-WebRequest '!sourceUrl!!fileToGet!' -OutFile '!destination!'"
-REM         if errorlevel 1 (
-REM             call "!utilsScript!" WriteLine "Download failed. Sorry." "!color_error!"
-REM             set moduleInstallErrors=Unable to download !fileToGet!
-REM         )
-REM     )
-REM 
-REM     if exist "!destination!" (
-REM         call "!utilsScript!" WriteLine "Moving !fileToGet! into the models folder." "!color_info!"
-REM         move "!destination!" "!moduleDirPath!/models/" > nul
-REM     ) else (
-REM         call "!utilsScript!" WriteLine "Download faild. Sad face." "!color_warn!"
-REM     )
-REM ) else (
-REM     call "!utilsScript!" WriteLine "!fileToGet! already downloaded." "!color_success!"
-REM )
+REM Function to check registry for the specified version
+REM call :CheckVersion "%regpath32%" "%version%" "32-bit"
+call :CheckVCredistVersion "%regpath64%" "%version%" "64-bit"
 
-REM set moduleInstallErrors=
+if /i "!VCredistPresent!" == "false" (
+    set moduleInstallErrors=VC++ redist !version! is not installed. Please download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe
+) else (
+
+    set HF_HUB_DISABLE_SYMLINKS_WARNING=1
+
+    REM Download the model file at installation so we can run without a connection to the Internet.
+
+    REM Phi-3
+    set sourceUrl=https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main/
+    set fileToGet=Phi-3-mini-4k-instruct-q4.gguf
+
+    REM if not exist "!moduleDirPath!/models/!fileToGet!" (
+    REM     set destination=!downloadDirPath!\!modulesDir!\!moduleDirName!\!fileToGet!
+    REM 
+    REM     if not exist "!downloadDirPath!\!modulesDir!\!moduleDirName!" mkdir "!downloadDirPath!\!modulesDir!\!moduleDirName!"
+    REM     if not exist "!moduleDirPath!\models" mkdir "!moduleDirPath!\models"
+    REM 
+    REM     call "!utilsScript!" WriteLine "Downloading !fileToGet!" "!color_info!"
+    REM 
+    REM     powershell -command "Start-BitsTransfer -Source '!sourceUrl!!fileToGet!' -Destination '!destination!'"
+    REM     if errorlevel 1 (
+    REM         powershell -Command "Get-BitsTransfer | Remove-BitsTransfer"
+    REM         powershell -command "Start-BitsTransfer -Source '!sourceUrl!!fileToGet!' -Destination '!destination!'"
+    REM     )
+    REM     if errorlevel 1 (
+    REM         powershell -Command "Invoke-WebRequest '!sourceUrl!!fileToGet!' -OutFile '!destination!'"
+    REM         if errorlevel 1 (
+    REM             call "!utilsScript!" WriteLine "Download failed. Sorry." "!color_error!"
+    REM             set moduleInstallErrors=Unable to download !fileToGet!
+    REM         )
+    REM     )
+    REM 
+    REM     if exist "!destination!" (
+    REM         call "!utilsScript!" WriteLine "Moving !fileToGet! into the models folder." "!color_info!"
+    REM         move "!destination!" "!moduleDirPath!/models/" > nul
+    REM     ) else (
+    REM         call "!utilsScript!" WriteLine "Download faild. Sad face." "!color_warn!"
+    REM     )
+    REM ) else (
+    REM     call "!utilsScript!" WriteLine "!fileToGet! already downloaded." "!color_success!"
+    REM )
+
+    REM set moduleInstallErrors=
+)
+
+goto :eof
+
+:CheckVCredistVersion
+    SetLocal EnableDelayedExpansion
+    set "reg_path=%~1"
+    set "version=%~2"
+    set "bitness=%~3"
+
+    REM Query the registry to find the installed version
+    for /f "tokens=3" %%a in ('reg query !reg_path! /v Version 2^>nul') do (
+        REM echo VERSION IS '%%a', checking against !version!
+        if "%%a"=="v!version!" (
+            echo VC++ Redistributable !version! is installed for !bitness!.
+            endlocal & set VCredistPresent=true
+            exit /b
+        )
+    )
+    echo VC++ Redistributable !version! is NOT installed for !bitness!.
+    endlocal & set VCredistPresent=false
+
+    exit /b
