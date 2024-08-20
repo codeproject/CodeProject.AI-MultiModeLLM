@@ -7,7 +7,7 @@
                 "hidden": false
             },
 
-            "name": "Multi-mode LLM",
+            "name": "Launch Multi-mode LLM",
             "type": "debugpy",
             "justMyCode": false,
             "request": "launch",
@@ -33,7 +33,7 @@
                 "python": "${workspaceFolder}/bin/linux/python311/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/bin/macos/python310/venv/bin/python",
+                "python": "${workspaceFolder}/bin/macos/python311/venv/bin/python",
             }
         }
     ]

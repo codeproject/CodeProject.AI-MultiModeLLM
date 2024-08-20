@@ -28,41 +28,31 @@ if [ "$moduleInstallErrors" = "" ]; then
 
     oneStepPIP=true  # Makes dealing with Numpy so much easier.
 
-    HF_HUB_DISABLE_SYMLINKS_WARNING=1
-
-    # codellama
-    # sourceUrl="https://huggingface.co/TheBloke/CodeLlama-7B-GGUF/resolve/main/"
-    # fileToGet="codellama-7b.Q4_K_M.gguf"
-      
-    # Mistral
-    # sourceUrl="https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/"
-    # fileToGet=mistral-7b-instruct-v0.2.Q4_K_M.gguf
-
-    # Phi-3
-    sourceUrl="https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main/"
-    fileToGet="Phi-3-mini-4k-instruct-q4.gguf"
-
-    if [ "$verbosity" = "loud" ]; then writeLine "Looking for model: ${moduleDirPath}/models/${fileToGet}"; fi
-
-    if [ ! -f "${moduleDirPath}/models/${fileToGet}" ]; then
-        
-        cacheDirPath="${downloadDirPath}/${modulesDir}/${moduleDirName}/${fileToGet}"
-        
-        if [ "$verbosity" = "loud" ]; then writeLine  "Looking for cache: ${cacheDirPath}"; fi
-        if [ ! -f "${cacheDirPath}" ]; then
-            mkdir -p "${downloadDirPath}/${modulesDir}/${moduleDirName}"
-            mkdir -p "${moduleDirPath}/models"
-            wget $wgetFlags -P "${downloadDirPath}/${modulesDir}/${moduleDirName}" "${sourceUrl}${fileToGet}"
-        elif [ "$verbosity" = "loud" ]; then
-            writeLine "File is cached" 
-        fi
-
-        if [ -f "${cacheDirPath}" ]; then 
-            cp "${cacheDirPath}" "${moduleDirPath}/models/"
-        fi
-
+    if [ "$os" = "macos" ]; then
+        phi3_sourceUrl="https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main/"
+        phi3_fileToGet="Phi-3-mini-4k-instruct-q4.gguf"
     else
-        writeLine "${fileToGet} already downloaded." "$color_success"
+        if [ "${hasCUDA}" = true ]; then
+            # Linux CUDA
+            phi3_folder="cuda-int4-rtn-block-32"
+            phi3_fileId="microsoft/Phi-3-vision-128k-instruct-onnx-cuda"
+        else
+            # Linux CPU
+            phi3_fileId="microsoft/Phi-3-vision-128k-instruct-onnx-cpu"
+            phi3_folder="cpu-int4-rtn-block-32-acc-level-4"
+        fi
+
+        HF_HUB_DISABLE_SYMLINKS_WARNING=1
+
+        write "Looking for model: ${phi3_fileId} in ${phi3_folder}"
+        if [ ! -d "${moduleDirPath}/${phi3_folder}/" ]; then
+            write "downloading..."
+            installPythonPackagesByName "huggingface-hub[cli]"
+            huggingface-cli download ${phi3_fileId} --include ${phi3_folder}/* --local-dir .
+            writeLine "Done." "$color_success"
+        else
+            writeLine "${fileToGet} already downloaded." "$color_success"
+        fi    
     fi
-    
+
 fi

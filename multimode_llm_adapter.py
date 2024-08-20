@@ -4,49 +4,53 @@
 # Import our general libraries
 import os
 
+# SEE https://github.com/microsoft/onnxruntime-genai/blob/main/examples/python/phi3v.py 
+#    for CPU / ONNX code
+
 from PIL import Image
 
 # Import CodeProject.AI SDK
-from codeproject_ai_sdk import RequestData, ModuleRunner, ModuleOptions, \
-                               LogMethod, LogVerbosity, JSON
+from codeproject_ai_sdk import RequestData, ModuleRunner, LogMethod, LogVerbosity, JSON
 
-from multimode_llm import MultiModeLLM
+from multimode_llm import MultiModeLLM, use_ONNX
 
 class MultiModeLLM_adapter(ModuleRunner):
 
     def initialise(self) -> None:
 
-        self.models_dir      = ModuleOptions.getEnvVariable("CPAI_MODULE_MULTIMODE_LLM_MODEL_DIR",
-                                                            "./models")
-
-        # For loading model downloaded at install time
-        self.model_filename  = ModuleOptions.getEnvVariable("CPAI_MODULE_MULTIMODE_MODEL_FILENAME",
-                                                            "Phi-3-vision-128k-instruct.gguf")
-
-        # fallback loading (at runtime, needs internet) via `from_pretrained`
-        self.model_repo      = ModuleOptions.getEnvVariable("CPAI_MODULE_MULTIMODE_MODEL_REPO",
-                                                            "microsoft/Phi-3-vision-128k-instruct")
-
-        self.inference_device = "CPU"
-        self.device           = "cpu"
-
-        if self.system_info.os == "macOS":
-            # self.inference_device  = "GPU"
-            # self.inference_library = "Metal"
-            # self.device="mps"
-            pass
-        else:
-            (cuda_major, cuda_minor) = self.system_info.getCudaVersion
-            if cuda_major and (cuda_major > 11 or (cuda_major == 11 and cuda_minor >= 6)):
+        if use_ONNX:           
+            (cuda_major, _) = self.system_info.getCudaVersion
+            if cuda_major and cuda_major >= 11:
                 self.inference_device  = "GPU"
                 self.inference_library = "CUDA"
-                self.device="cuda"
-
+                self.device            = "cuda"
+                self.model_repo        = "microsoft/Phi-3-vision-128k-instruct-onnx-cuda"
+                self.models_dir        = "cuda-int4-rtn-block-32"
+            else:
+                self.inference_device  = "CPU"
+                self.device            = "cpu"
+                self.inference_library = "ONNX"
+                self.model_repo        = "microsoft/Phi-3-vision-128k-instruct-onnx-cpu"
+                self.models_dir        = "pu-int4-rtn-block-32-acc-level-4"
+        else:
+            # If only...
+            # if self.system_info.cpu_vendor == 'Apple' and self.system_info.cpu_arch == 'arm64':
+            #     self.inference_device  = "GPU"
+            #     self.inference_library = "Metal"
+            #     self.device            = "mps"
+            self.inference_device = "CPU"
+            self.device           = "cpu"
+            self.model_filename   = "Phi-3-vision-128k-instruct.gguf"
+            self.model_repo       = "microsoft/Phi-3-vision-128k-instruct"
+            self.models_dir       = "./models"
+            
         verbose = self.log_verbosity != LogVerbosity.Quiet
-        self.multimode_chat = MultiModeLLM(model_id=self.model_repo,
+        self.multimode_chat = MultiModeLLM(model_repo=self.model_repo,
                                            filename=self.model_filename,
                                            model_dir=self.models_dir,
-                                           device=self.device, verbose=verbose)
+                                           device=self.device, 
+                                           inference_library=self.inference_library,
+                                           verbose=verbose)
         
         if self.multimode_chat.model_path:
             self.log(LogMethod.Info|LogMethod.Server, {
@@ -74,7 +78,7 @@ class MultiModeLLM_adapter(ModuleRunner):
         response = self.multimode_chat.do_chat(user_prompt, image, system_prompt,
                                                max_tokens=max_tokens,
                                                temperature=temperature,
-                                               stream=True)
+                                               stream=False)
         return response
     
         # return self.long_process
