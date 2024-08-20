@@ -26,6 +26,8 @@ fi
 
 if [ "$moduleInstallErrors" = "" ]; then
 
+    oneStepPIP=true  # Makes dealing with Numpy so much easier.
+
     HF_HUB_DISABLE_SYMLINKS_WARNING=1
 
     # codellama
