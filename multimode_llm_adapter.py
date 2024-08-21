@@ -10,7 +10,7 @@ import os
 from PIL import Image
 
 # Import CodeProject.AI SDK
-from codeproject_ai_sdk import RequestData, ModuleRunner, LogMethod, LogVerbosity, JSON
+from codeproject_ai_sdk import RequestData, ModuleRunner, ModuleOptions, LogMethod, LogVerbosity, JSON
 
 from multimode_llm import MultiModeLLM, use_ONNX
 
@@ -25,12 +25,14 @@ class MultiModeLLM_adapter(ModuleRunner):
                 self.inference_library = "CUDA"
                 self.device            = "cuda"
                 self.model_repo        = "microsoft/Phi-3-vision-128k-instruct-onnx-cuda"
+                self.model_filename    = None # "Phi-3-vision-128k-instruct.gguf"
                 self.models_dir        = "cuda-int4-rtn-block-32"
             else:
                 self.inference_device  = "CPU"
                 self.device            = "cpu"
                 self.inference_library = "ONNX"
                 self.model_repo        = "microsoft/Phi-3-vision-128k-instruct-onnx-cpu"
+                self.model_filename    = None # "Phi-3-vision-128k-instruct.gguf"
                 self.models_dir        = "pu-int4-rtn-block-32-acc-level-4"
         else:
             # If only...
@@ -40,14 +42,14 @@ class MultiModeLLM_adapter(ModuleRunner):
             #     self.device            = "mps"
             self.inference_device = "CPU"
             self.device           = "cpu"
-            self.model_filename   = "Phi-3-vision-128k-instruct.gguf"
             self.model_repo       = "microsoft/Phi-3-vision-128k-instruct"
+            self.model_filename    = None # "Phi-3-vision-128k-instruct.gguf"
             self.models_dir       = "./models"
             
         verbose = self.log_verbosity != LogVerbosity.Quiet
         self.multimode_chat = MultiModeLLM(model_repo=self.model_repo,
                                            filename=self.model_filename,
-                                           model_dir=self.models_dir,
+                                           model_dir=os.path.join(ModuleOptions.module_path,self.models_dir),
                                            device=self.device, 
                                            inference_library=self.inference_library,
                                            verbose=verbose)

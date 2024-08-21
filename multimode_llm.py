@@ -42,7 +42,7 @@ class MultiModeLLM:
                 #      and load fail, fall through to download-at-runtime
                 raise
 
-        except:
+        except Exception as ex:
             if use_ONNX:
                 # No luck loading what we downloaded
                 self.model      = None
@@ -78,7 +78,7 @@ class MultiModeLLM:
 
                     self.model_path = self.model.name_or_path
 
-                except Exception as ex:
+                except Exception as ex_2:
                     self.model      = None
                     self.processor  = None
                     self.model_path = None

@@ -14,82 +14,32 @@
     @goto:eof
 )
 
+set oneStepPIP=false
 
-REM Define the version to check
-set "version=14.40.33810.00"
+set useCUDA=false
+if "!cuda_major_version!" == "12" set useCUDA=true
+if "!cuda_version!" == "11.8"     set useCUDA=true
 
-REM Registry path for the VC++ redistributables
-set "regpath32=HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86"
-set "regpath64=HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
-
-REM Function to check registry for the specified version
-REM call :CheckVersion "%regpath32%" "%version%" "32-bit"
-call :CheckVCredistVersion "%regpath64%" "%version%" "64-bit"
-
-if /i "!VCredistPresent!" == "false" (
-    set moduleInstallErrors=VC++ redist !version! is not installed. Please download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe
+if "!useCUDA!" == "true" (
+    set "phi3_folder=cuda-int4-rtn-block-32"
+    set "phi3_fileId=microsoft/Phi-3-vision-128k-instruct-onnx-cuda"
 ) else (
-
-    set HF_HUB_DISABLE_SYMLINKS_WARNING=1
-
-    REM Download the model file at installation so we can run without a connection to the Internet.
-
-    REM Phi-3
-    set sourceUrl=https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main/
-    set fileToGet=Phi-3-mini-4k-instruct-q4.gguf
-
-    REM if not exist "!moduleDirPath!/models/!fileToGet!" (
-    REM     set destination=!downloadDirPath!\!modulesDir!\!moduleDirName!\!fileToGet!
-    REM 
-    REM     if not exist "!downloadDirPath!\!modulesDir!\!moduleDirName!" mkdir "!downloadDirPath!\!modulesDir!\!moduleDirName!"
-    REM     if not exist "!moduleDirPath!\models" mkdir "!moduleDirPath!\models"
-    REM 
-    REM     call "!utilsScript!" WriteLine "Downloading !fileToGet!" "!color_info!"
-    REM 
-    REM     powershell -command "Start-BitsTransfer -Source '!sourceUrl!!fileToGet!' -Destination '!destination!'"
-    REM     if errorlevel 1 (
-    REM         powershell -Command "Get-BitsTransfer | Remove-BitsTransfer"
-    REM         powershell -command "Start-BitsTransfer -Source '!sourceUrl!!fileToGet!' -Destination '!destination!'"
-    REM     )
-    REM     if errorlevel 1 (
-    REM         powershell -Command "Invoke-WebRequest '!sourceUrl!!fileToGet!' -OutFile '!destination!'"
-    REM         if errorlevel 1 (
-    REM             call "!utilsScript!" WriteLine "Download failed. Sorry." "!color_error!"
-    REM             set moduleInstallErrors=Unable to download !fileToGet!
-    REM         )
-    REM     )
-    REM 
-    REM     if exist "!destination!" (
-    REM         call "!utilsScript!" WriteLine "Moving !fileToGet! into the models folder." "!color_info!"
-    REM         move "!destination!" "!moduleDirPath!/models/" > nul
-    REM     ) else (
-    REM         call "!utilsScript!" WriteLine "Download faild. Sad face." "!color_warn!"
-    REM     )
-    REM ) else (
-    REM     call "!utilsScript!" WriteLine "!fileToGet! already downloaded." "!color_success!"
-    REM )
-
-    REM set moduleInstallErrors=
+    set "phi3_fileId=microsoft/Phi-3-vision-128k-instruct-onnx-cpu"
+    set "phi3_folder=cpu-int4-rtn-block-32-acc-level-4"
 )
 
-goto :eof
+winget install -e --id GitHub.GitLFS
 
-:CheckVCredistVersion
-    SetLocal EnableDelayedExpansion
-    set "reg_path=%~1"
-    set "version=%~2"
-    set "bitness=%~3"
+set HF_HUB_DISABLE_SYMLINKS_WARNING=1
 
-    REM Query the registry to find the installed version
-    for /f "tokens=3" %%a in ('reg query !reg_path! /v Version 2^>nul') do (
-        REM echo VERSION IS '%%a', checking against !version!
-        if "%%a"=="v!version!" (
-            echo VC++ Redistributable !version! is installed for !bitness!.
-            endlocal & set VCredistPresent=true
-            exit /b
-        )
-    )
-    echo VC++ Redistributable !version! is NOT installed for !bitness!.
-    endlocal & set VCredistPresent=false
+rem call "!utilsScript!" Write "Looking for model !phi3_fileId! in !moduleDirPath!\!phi3_folder!..."
+call "!utilsScript!" Write "Looking for model !phi3_fileId! in .\!phi3_folder!..."
 
-    exit /b
+if exist "!moduleDirPath!\!phi3_folder!" (
+    call "!utilsScript!" WriteLine "Already downloaded." "!color_success!"
+) else (
+    call "!utilsScript!" Write "downloading..."
+    call "!utilsScript!" InstallPythonPackagesByName "huggingface-hub[cli]"
+    !venvPythonCmdPath! !packagesDirPath!\huggingface_hub\commands\huggingface_cli.py download !phi3_fileId! --include !phi3_folder!\* --local-dir .
+    call "!utilsScript!" WriteLine "Done." "!color_success!"
+)

@@ -32,3 +32,4 @@ wget-log*
 # Models
 models/
 cpu-int4-rtn-block-32-acc-level-4/
+cuda-int4-rtn-block-32/

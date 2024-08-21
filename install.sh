@@ -29,8 +29,10 @@ if [ "$moduleInstallErrors" = "" ]; then
     oneStepPIP=true  # Makes dealing with Numpy so much easier.
 
     if [ "$os" = "macos" ]; then
-        phi3_sourceUrl="https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main/"
-        phi3_fileToGet="Phi-3-mini-4k-instruct-q4.gguf"
+        phi3_sourceUrl="..."
+        phi3_fileToGet="..."
+        # brew install git-lfs
+
     else
         if [ "${hasCUDA}" = true ]; then
             # Linux CUDA
@@ -41,6 +43,8 @@ if [ "$moduleInstallErrors" = "" ]; then
             phi3_fileId="microsoft/Phi-3-vision-128k-instruct-onnx-cpu"
             phi3_folder="cpu-int4-rtn-block-32-acc-level-4"
         fi
+
+        sudo apt-get install git-lfs
 
         HF_HUB_DISABLE_SYMLINKS_WARNING=1
 
