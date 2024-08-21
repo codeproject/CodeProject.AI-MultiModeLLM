@@ -142,8 +142,6 @@ class MultiModeLLM:
                     new_response = self.tokenizer_stream.decode(new_token)
                     response += new_response
 
-                    print(new_response)
-
                 inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 
                 del generator

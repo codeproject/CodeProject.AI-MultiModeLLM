@@ -105,8 +105,12 @@ class MultiModeLLM_adapter(ModuleRunner):
 
                     generator.compute_logits()
                     generator.generate_next_token()
-                    new_token = generator.get_next_tokens()[0]
-                    self.reply_text += tokenizer_stream.decode(new_token)
+
+                    next_tokens   = generator.get_next_tokens()
+                    next_token    = next_tokens[0]
+                    next_response = tokenizer_stream.decode(next_token)
+
+                    self.reply_text += next_response
                 
             inferenceMs : int = int((time.perf_counter() - start_inference_time) * 1000)
 
