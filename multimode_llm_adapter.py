@@ -18,9 +18,9 @@ class MultiModeLLM_adapter(ModuleRunner):
 
     def initialise(self) -> None:
 
-        if use_ONNX:           
-            (cuda_major, _) = self.system_info.getCudaVersion
-            if cuda_major and cuda_major >= 11:
+        if use_ONNX:
+            (cuda_major, cuda_minor) = self.system_info.getCudaVersion
+            if cuda_major and (cuda_major >= 12 or (cuda_major == 11 and cuda_minor == 8)) :
                 self.inference_device  = "GPU"
                 self.inference_library = "CUDA"
                 self.device            = "cuda"

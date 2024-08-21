@@ -110,7 +110,16 @@ class MultiModeLLM:
         inferenceMs = 0
         try:
             if use_ONNX:
-                inputs = self.processor(prompt, images=image)
+                
+                # ONNX genai API doesn't (yet) provide the means to load an image
+                # from memory https://github.com/microsoft/onnxruntime-genai/issues/777
+                import os
+                temp_name="onnx_genai_temp_image.png"
+                image.save(temp_name)
+                og_image = og.Images.open(temp_name)
+                os.remove(temp_name)
+
+                inputs = self.processor(prompt, images=og_image)
 
                 params = og.GeneratorParams(self.model)
                 params.set_inputs(inputs)
@@ -154,9 +163,12 @@ class MultiModeLLM:
                 "inferenceMs": 0
             }
 
-        if self.device == "cuda":
-            import torch
-            torch.cuda.empty_cache()
+        if not use_ONNX and self.device == "cuda":
+            try:
+                import torch
+                torch.cuda.empty_cache()
+            except:
+                pass
 
         if stop_reason is None:
             stop_reason = "completed"

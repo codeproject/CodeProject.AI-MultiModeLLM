@@ -21,6 +21,13 @@ if "!cuda_major_version!" == "12" set useCUDA=true
 if "!cuda_version!" == "11.8"     set useCUDA=true
 
 if "!useCUDA!" == "true" (
+
+    set "RequiredVCRedistVersion=14.40.33810.00"
+    call "!utilsScript!" GetVCredistVersion "64-bit"
+    if "!VCredistVersion!" NEQ "!RequiredVCRedistVersion!" (
+        set moduleInstallErrors=VC++ redist !RequiredVCRedistVersion! is not installed. Please download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe
+    )
+    
     set "phi3_folder=cuda-int4-rtn-block-32"
     set "phi3_fileId=microsoft/Phi-3-vision-128k-instruct-onnx-cuda"
 ) else (
