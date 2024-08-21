@@ -85,6 +85,19 @@ class MultiModeLLM_adapter(ModuleRunner):
         max_tokens: int    = data.get_int("max_tokens", 0) #0 means model default
         temperature: float = data.get_float("temperature", 0.4)
 
+        # If a PDF is passed in:
+        # import pymupdf
+        # file_bytes = data.get_file_bytes(0)
+        # doc = pymupdf.Document(stream=file_bytes)
+        # for page in doc:  # iterate through the pages
+        #    pix = page.get_pixmap()  # render page to an image
+        #    pix.save("page-%i.png" % page.number)  # store image as a PNG
+        #    # To scale 2X:
+        #    # zoom_x = 2.0  # horizontal zoom
+        #    # zoom_y = 2.0  # vertical zoom
+        #    # mat = pymupdf.Matrix(zoom_x, zoom_y)  # zoom factor 2 in each dimension
+        #    # pix = page.get_pixmap(matrix=mat)  # use 'mat' instead of the identity matrix
+
         start_process_time = time.perf_counter()
 
         try:
