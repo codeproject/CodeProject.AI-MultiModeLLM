@@ -61,7 +61,7 @@ RULES AND CONVENTIONS
 -->
 <head>
     <meta charset="utf-8" />
-    <title>LlamaChat Module Test</title>
+    <title>MultiMode LLM Module Test</title>
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
     <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/server.css?v=2.5.0.0">
@@ -82,8 +82,14 @@ RULES AND CONVENTIONS
 </head>
 <body class="dark-mode">
     <div class="mx-auto" style="max-width: 800px;">
-        <h2 class="mb-3">LlamaChat Module Test</h2>
+        <h2 class="mb-3">Mulit-modal LLM Module Test</h2>
         <form method="post" action="" enctype="multipart/form-data" id="myform">
+
+            <div class="form-group row mt-1">
+                <label class="col-3 col-form-label text-end">Service URL</label>
+                <input class="form-control"  id="serviceUrl" type="text"
+                       value="http://localhost:32168" style="width:20rem" />
+            </div>
 
             <!-- START EXPLORER MARKUP -->
             <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -103,9 +109,13 @@ RULES AND CONVENTIONS
                               placeholder="Ask a question"></textarea>
                     <input class="btn btn-info btn-sm " id="_MID_queryBtn"
                            type="button" value="Send" style="height:2rem;width:4rem"
-                           onclick="_MID_onLlamaChat(_MID_promptText.value, _MID_systemPrompt.value, _MID_maxTokens.value, _MID_temperature.value)">
+                           onclick="_MID_onMultiModalChat(_MID_promptText.value, _MID_image, _MID_systemPrompt.value, _MID_maxTokens.value, _MID_temperature.value)">
                     <input class="btn btn-warning btn-sm " type="button" value="Stop" id="_MID_stopBtn"
-                           onclick="_MID_onLlamaStop()" style="display: none;height:2rem;width:4rem" />
+                           onclick="_MID_onMultiModalStop()" style="display: none;height:2rem;width:4rem" />
+                </div>
+                <div class="input-group mt-1">
+                    <input class="col form-control btn-light" id="_MID_image" type="file" style="width:100%"
+                            onchange="return previewImage(this)" />
                 </div>
             </div>
 
@@ -119,15 +129,15 @@ RULES AND CONVENTIONS
                 <label class="col-3 col-form-label text-end">System Prompt</label>
                 <input class="form-control"  id="_MID_systemPrompt" type="text"
                        value="You're a helpful assistant who answers questions the user asks of you concisely and accurately"
-                       style="width:100%" />
+                       style="width:25rem" />
             </div>
             <div class="form-group row mt-1">
                 <label class="col-3 col-form-label text-end">Max tokens</label>
-                <input class="form-control" value="0" id="_MID_maxTokens" type="number"
+                <input class="form-control" value="16000" id="_MID_maxTokens" type="number"
                        style="width:5rem" />
 
                 <label class="col-3 col-form-label text-end">Temperature</label>
-                <input class="form-control" value="0.8" id="_MID_temperature" type="text"
+                <input class="form-control" value="0.0" id="_MID_temperature" type="text"
                        style="width:5rem" />
             </div>
             <div><small><b>Warning: </b>LLMs can fabricate and hallucinate. <b>Always</b> verify results.</small></div>
@@ -155,14 +165,14 @@ RULES AND CONVENTIONS
             let chat           = '';
             let commandId      = '';
 
-            async function _MID_onLlamaChat(prompt, systemPrompt, maxTokens, temperature) {
+            async function _MID_onMultiModalChat(prompt, fileChooser, systemPrompt, maxTokens, temperature) {
                 // show the stop button and hide the query button
                _MID_queryBtn.style.display = "none";
                _MID_stopBtn.style.display  = "inline";
                clearImagePreview();
 
                 if (!prompt) {
-                    alert("No text was provided for Llama chat");
+                    alert("No text was provided for MultiModal chat");
                     return;
                 }
 
@@ -173,8 +183,11 @@ RULES AND CONVENTIONS
                     ['temperature',   temperature]
                 ];
 
-                setResultsHtml("Sending prompt...");
-                let data = await submitRequest('text', 'chat', null, params)
+    			showPreviewImage(fileChooser.files[0]);
+	    		let images = [fileChooser.files[0]];
+
+                setResultsHtml("Sending prompt and image...");
+                let data = await submitRequest('text', 'multimodal-chat', images, params)
                 if (data) {
                     _MID_answerText.innerHTML = "<div class='text-muted'>Answer will appear here...</div>";
 
@@ -202,7 +215,7 @@ RULES AND CONVENTIONS
 
                         await delay(250);
 
-                        let results = await submitRequest('LlamaChat', 'get_command_status', null, params);
+                        let results = await submitRequest('MultiModeLLM', 'get_command_status', null, params);
                         if (results) {
                             if (results.success) {
 
@@ -246,9 +259,9 @@ RULES AND CONVENTIONS
                }
             }
 
-            async function _MID_onLlamaStop() {
-                let params = [['commandId', commandId], ['moduleId', 'LlamaChat']];
-                let result = await submitRequest('LlamaChat', 'cancel_command', null, params);
+            async function _MID_onMultiModalStop() {
+                let params = [['commandId', commandId], ['moduleId', 'MultiModeLLM']];
+                let result = await submitRequest('MultiModeLLM', 'cancel_command', null, params);
                 setResultsHtml("Command stopped");
                 // show the query button and hide the stop button
                 _MID_queryBtn.style.display = "inline";

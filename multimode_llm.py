@@ -125,18 +125,24 @@ class MultiModeLLM:
                 params.set_inputs(inputs)
                 params.set_search_options(max_length=3072)
 
-
                 response = ""
 
-                start_inference_time = time.perf_counter()
-
                 generator = og.Generator(self.model, params)
+
+                # If we're streaming then short circuit here and just return the
+                # generator. NOTE: the caller will need to del the generator
+                if stream:
+                    return (generator, self.tokenizer_stream)
+                
                 while not generator.is_done():
                     generator.compute_logits()
                     generator.generate_next_token()
 
-                    new_token = generator.get_next_tokens()[0]
-                    response += self.tokenizer_stream.decode(new_token)
+                    new_token    = generator.get_next_tokens()[0]
+                    new_response = self.tokenizer_stream.decode(new_token)
+                    response += new_response
+
+                    print(new_response)
 
                 inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 

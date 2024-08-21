@@ -3,6 +3,7 @@
 
 # Import our general libraries
 import os
+import time
 
 # SEE https://github.com/microsoft/onnxruntime-genai/blob/main/examples/python/phi3v.py 
 #    for CPU / ONNX code
@@ -70,72 +71,47 @@ class MultiModeLLM_adapter(ModuleRunner):
 
 
     def process(self, data: RequestData) -> JSON:
-        
+        return self.long_process
+
+
+    def long_process(self, data: RequestData) -> JSON:
+
+        self.reply_text = ""
+        stop_reason = None
+
         user_prompt: str   = data.get_value("prompt")
         system_prompt: str = data.get_value("system_prompt")
         image: Image       = data.get_image(0)
         max_tokens: int    = data.get_int("max_tokens", 0) #0 means model default
         temperature: float = data.get_float("temperature", 0.4)
 
-        response = self.multimode_chat.do_chat(user_prompt, image, system_prompt,
-                                               max_tokens=max_tokens,
-                                               temperature=temperature,
-                                               stream=False)
-        return response
-    
-        # return self.long_process
-
-
-    """
-    def long_process(self, data: RequestData) -> JSON:
-
-        self.reply_text = ""
-        stop_reason = None
-
-        prompt: str        = data.get_value("prompt")
-        system_prompt: str = data.get_value("system_prompt")
-        max_tokens: int    = data.get_int("max_tokens", 0) #0 means model default
-        temperature: float = data.get_float("temperature", 0.4)
-
-#streaming
-from threading import Thread
-streamer = TextIteratorStreamer(processor.tokenizer,skip_prompt=True,skip_special_tokens=True,clean_up_tokenization_spaces=False)
-
-# Run the generation in a separate thread, so that we can fetch the generated text in a non-blocking way.
-generation_kwargs = dict(inputs, streamer=streamer, max_new_tokens=512, eos_token_id=processor.tokenizer.eos_token_id)
-thread = Thread(target=model.generate, kwargs=generation_kwargs)
-thread.start()
-
-for text in streamer:
-    print(text, end="", flush=True)
-
+        start_process_time = time.perf_counter()
 
         try:
-            start_time = time.perf_counter()
+            (generator, tokenizer_stream) = self.multimode_chat.do_chat(user_prompt, image,
+                                                                        system_prompt,
+                                                                        max_tokens=max_tokens,
+                                                                        temperature=temperature,
+                                                                        stream=True)
+        
+            start_inference_time = time.perf_counter()
 
-            completion = self.multimode_chat.do_chat(prompt=prompt, system_prompt=system_prompt,
-                                                     max_tokens=max_tokens, temperature=temperature,
-                                                     stream=True)
-            if completion:
-                try:
-                    for output in completion:
-                        if self.cancelled:
-                            self.cancelled = False
-                            stop_reason = "cancelled"
-                            break
+            if generator:                   
+                while not generator.is_done():
+                    if self.cancelled:
+                        self.cancelled = False
+                        stop_reason = "cancelled"
+                        break
 
-                        # Using the raw result from the multimode_chat module. In
-                        # building modules we don't try adn rewrite the code we
-                        # are wrapping. Rather, we wrap the code so we can take
-                        # advantage of updates to the original code more easily
-                        # rather than having to re-apply fixes.
-                        delta = output["choices"][0]["delta"]
-                        if "content" in delta:
-                            self.reply_text += delta["content"]
-                except StopIteration:
-                    pass
+                    generator.compute_logits()
+                    generator.generate_next_token()
+                    new_token = generator.get_next_tokens()[0]
+                    self.reply_text += tokenizer_stream.decode(new_token)
                 
-            inferenceMs : int = int((time.perf_counter() - start_time) * 1000)
+            inferenceMs : int = int((time.perf_counter() - start_inference_time) * 1000)
+
+            if generator:                   
+                del generator
 
             if stop_reason is None:
                 stop_reason = "completed"
@@ -144,7 +120,7 @@ for text in streamer:
                 "success": True, 
                 "reply": self.reply_text,
                 "stop_reason": stop_reason,
-                "processMs" : inferenceMs,
+                "processMs": int((time.perf_counter() - start_process_time) * 1000),
                 "inferenceMs" : inferenceMs
             }
 
@@ -153,7 +129,7 @@ for text in streamer:
             response = { "success": False, "error": "Unable to generate text" }
 
         return response
-    """
+    
 
     def command_status(self) -> JSON:
         return {
@@ -180,13 +156,13 @@ for text in streamer:
         file_name = os.path.join("test", "home-office.jpg")
         request_data.add_file(file_name)
 
-        result = self.process(request_data)
-        # result = self.long_process(request_data)
+        # result = self.process(request_data)
+        result = self.long_process(request_data)
 
         print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
         # print(f"Info: Self-test output for {self.module_id}: {result}")
 
-        return { "success": result['success'], "message": "LlamaChat test successful" }
+        return { "success": result['success'], "message": "MulitModal LLM test successful" }
 
 
 if __name__ == "__main__":

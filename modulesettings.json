@@ -63,7 +63,7 @@
       "RouteMaps": [
         {
           "Name": "MultiModeLLM",
-          "Route": "text/chat",
+          "Route": "text/multimodal-chat",
           "Method": "POST",
           "Command": "prompt",
           "MeshEnabled": false,
