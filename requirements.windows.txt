@@ -1,5 +1,4 @@
-#
-! Python3.10
+#! Python3.10
 
 # For Phi-3 ONNX / DirectML
 numpy                         # Installing NumPy, a package for scientific computing
