@@ -32,7 +32,7 @@ class MultiModeLLM_adapter(ModuleRunner):
                 print("*** Multi-modal LLM using CPU only: This module requires > 16Gb RAM")
                 self.inference_device  = "CPU"
                 self.device            = "cpu"
-                self.inference_library = "ONNX"
+                self.inference_library = "ONNX/DML" if self.system_info.os == "Windows" else "ONNX"
                 self.model_repo        = "microsoft/Phi-3-vision-128k-instruct-onnx-cpu"
                 self.model_filename    = None # "Phi-3-vision-128k-instruct.gguf"
                 self.models_dir        = "cpu-int4-rtn-block-32-acc-level-4"
