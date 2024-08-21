@@ -48,11 +48,12 @@ if [ "$moduleInstallErrors" = "" ]; then
 
         HF_HUB_DISABLE_SYMLINKS_WARNING=1
 
-        write "Looking for model: ${phi3_fileId} in ${phi3_folder}"
+        write "Looking for model: ${phi3_fileId} in ${phi3_folder}..."
         if [ ! -d "${moduleDirPath}/${phi3_folder}/" ]; then
             write "downloading..."
             installPythonPackagesByName "huggingface-hub[cli]"
-            huggingface-cli download ${phi3_fileId} --include ${phi3_folder}/* --local-dir .
+            ${venvPythonCmdPath} ${packagesDirPath}/huggingface_hub/commands/huggingface_cli.py download ${phi3_fileId} --include ${phi3_folder}\* --local-dir .
+            # huggingface-cli download ${phi3_fileId} --include ${phi3_folder}/* --local-dir .
             writeLine "Done." "$color_success"
         else
             writeLine "${fileToGet} already downloaded." "$color_success"

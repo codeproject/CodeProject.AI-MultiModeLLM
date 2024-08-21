@@ -29,13 +29,15 @@ class MultiModeLLM_adapter(ModuleRunner):
                 self.model_filename    = None # "Phi-3-vision-128k-instruct.gguf"
                 self.models_dir        = "cuda-int4-rtn-block-32"
             else:
+                print("*** Multi-modal LLM using CPU only: This module requires > 16Gb RAM")
                 self.inference_device  = "CPU"
                 self.device            = "cpu"
                 self.inference_library = "ONNX"
                 self.model_repo        = "microsoft/Phi-3-vision-128k-instruct-onnx-cpu"
                 self.model_filename    = None # "Phi-3-vision-128k-instruct.gguf"
-                self.models_dir        = "pu-int4-rtn-block-32-acc-level-4"
+                self.models_dir        = "cpu-int4-rtn-block-32-acc-level-4"
         else:
+            print("*** Multi-modal LLM using CPU only: This module requires > 16Gb RAM")
             # If only...
             # if self.system_info.cpu_vendor == 'Apple' and self.system_info.cpu_arch == 'arm64':
             #     self.inference_device  = "GPU"
