@@ -143,6 +143,10 @@ RULES AND CONVENTIONS
             <div><small><b>Warning: </b>LLMs can fabricate and hallucinate. <b>Always</b> verify results.</small></div>
             <!-- END EXPLORER MARKUP -->
 
+            <div class="w-100 position-relative form-control my-4 p-0">
+                <img src="" id="imgPreview" class="w-100" style="height:250px;visibility:hidden">
+            </div>
+
             <div class="mt-3">
                 <h2>Status</h2>
                 <div id="results" name="results" class="bg-light p-3" style="min-height: 100px;"></div>
@@ -236,12 +240,16 @@ RULES AND CONVENTIONS
                                 if (done) {
                                     // only clear the prompt if the command is done and not canceled
                                     // otherwise leave it so the user can modify it and re-run.
+                                    /*
                                     if (results.stop_reason != "cancelled") {
                                         _MID_promptText.value              = "";
                                         _MID_promptText.style.scrollHeight = 32;
                                         _MID_promptText.style.height       = "32px";
                                     }
-                                    setResultsHtml("Done");
+                                    */
+                                    html = getProcessingMetadataHtml(results);
+                                    setResultsHtml(html);                                    
+                                    // setResultsHtml("Done");
                                }
                             }
                             else {
