@@ -13,7 +13,7 @@ from PIL import Image
 # Import CodeProject.AI SDK
 from codeproject_ai_sdk import RequestData, ModuleRunner, ModuleOptions, LogMethod, LogVerbosity, JSON
 
-from multimode_llm import MultiModeLLM, use_ONNX
+from multimode_llm import MultiModeLLM, use_ONNX, use_MLX
 
 class MultiModeLLM_adapter(ModuleRunner):
 
@@ -36,6 +36,13 @@ class MultiModeLLM_adapter(ModuleRunner):
                 self.model_repo        = "microsoft/Phi-3-vision-128k-instruct-onnx-cpu"
                 self.model_filename    = None # "Phi-3-vision-128k-instruct.gguf"
                 self.models_dir        = "cpu-int4-rtn-block-32-acc-level-4"
+        elif use_MLX:
+            self.inference_device  = "GPU"
+            self.inference_library = "MLX"
+            self.device            = "mps"
+            self.model_repo        = "microsoft/Phi-3.5-vision-instruct"
+            self.model_filename    = None # "Phi-3.5-vision-instruct.gguf"
+            self.models_dir        = "models"
         else:
             print("*** Multi-modal LLM using CPU only: This module requires > 16Gb RAM")
             # If only...
@@ -101,47 +108,72 @@ class MultiModeLLM_adapter(ModuleRunner):
         #    # pix = page.get_pixmap(matrix=mat)  # use 'mat' instead of the identity matrix
 
         start_process_time = time.perf_counter()
+        start_inference_time = time.perf_counter()
+
+        error = None
 
         try:
-            (generator, tokenizer_stream) = self.multimode_chat.do_chat(user_prompt, image,
-                                                                        system_prompt,
-                                                                        max_tokens=max_tokens,
-                                                                        temperature=temperature,
-                                                                        stream=True)
-        
-            start_inference_time = time.perf_counter()
+            if use_ONNX:
+                (generator, tokenizer_stream) = self.multimode_chat.do_chat(user_prompt, image,
+                                                                            system_prompt,
+                                                                            max_tokens=max_tokens,
+                                                                            temperature=temperature,
+                                                                            stream=True)
+                if generator:
+                    while not generator.is_done():
+                        if self.cancelled:
+                            self.cancelled = False
+                            stop_reason = "cancelled"
+                            break
 
-            if generator:                   
-                while not generator.is_done():
-                    if self.cancelled:
-                        self.cancelled = False
-                        stop_reason = "cancelled"
-                        break
+                        generator.compute_logits()
+                        generator.generate_next_token()
 
-                    generator.compute_logits()
-                    generator.generate_next_token()
+                        next_tokens   = generator.get_next_tokens()
+                        next_token    = next_tokens[0]
+                        next_response = tokenizer_stream.decode(next_token)
 
-                    next_tokens   = generator.get_next_tokens()
-                    next_token    = next_tokens[0]
-                    next_response = tokenizer_stream.decode(next_token)
+                        self.reply_text += next_response
+                    
+                inferenceMs : int = int((time.perf_counter() - start_inference_time) * 1000)
 
-                    self.reply_text += next_response
+                if generator:                   
+                    del generator
+
+            else:
+                llm_response = self.multimode_chat.do_chat(user_prompt, image, system_prompt,
+                                                           max_tokens=max_tokens,
+                                                           temperature=temperature,
+                                                           stream=False)
+                if llm_response["success"]:
+                    inferenceMs     = llm_response["inferenceMs"]
+                    self.reply_text = llm_response["reply"]
+                else:
+                    error       = llm_response["error"] if "error" in llm_response["error"] else "Error generating reply"
+                    inferenceMs = 0
+
+            if stop_reason == "cancelled" and not self.reply_text and not error:
+                error = "Operation cancelled"
                 
-            inferenceMs : int = int((time.perf_counter() - start_inference_time) * 1000)
-
-            if generator:                   
-                del generator
-
             if stop_reason is None:
                 stop_reason = "completed"
 
-            response = {
-                "success": True, 
-                "reply": self.reply_text,
-                "stop_reason": stop_reason,
-                "processMs": int((time.perf_counter() - start_process_time) * 1000),
-                "inferenceMs" : inferenceMs
-            }
+            if error:
+                response = {
+                    "success": False, 
+                    "error": error,
+                    "reply": "",
+                    "stop_reason": stop_reason,
+                    "processMs": int((time.perf_counter() - start_process_time) * 1000),
+                }
+            else:
+                response = {
+                    "success": True, 
+                    "reply": self.reply_text,
+                    "stop_reason": stop_reason,
+                    "processMs": int((time.perf_counter() - start_process_time) * 1000),
+                    "inferenceMs" : inferenceMs
+                }
 
         except Exception as ex:
             self.report_error(ex, __file__)

@@ -29,6 +29,9 @@ if [ "$moduleInstallErrors" = "" ]; then
     oneStepPIP=true  # Makes dealing with Numpy so much easier.
 
     if [ "$os" = "macos" ]; then
+
+        oneStepPIP=false  # Makes dealing with Numpy so much easier.
+
         phi3_sourceUrl="..."
         phi3_fileToGet="..."
         # brew install git-lfs

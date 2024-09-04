@@ -1,13 +1,16 @@
+import platform
 import time
 import sys
 
 from PIL import Image
 
-# ONNX isn't supported in macOS
-use_ONNX = sys.platform != 'darwin'
+use_ONNX = sys.platform != 'darwin' 
+use_MLX  = sys.platform == 'darwin' and "ARM64" in platform.uname().version
 
 if use_ONNX:
     import onnxruntime_genai as og
+elif use_MLX:
+    from phi_3_vision_mlx import generate, load
 else:
     from transformers import AutoModelForCausalLM, AutoProcessor, AutoConfig
 
@@ -29,21 +32,33 @@ class MultiModeLLM:
         self.model_path = None
 
         try:
-            if use_ONNX:
+            if use_ONNX:    # Non macOS
+                
                 # For ONNX, we download the models at install time
                 self.device           = device
                 self.model_path       = model_dir
                 self.model            = og.Model(self.model_path)
                 self.processor        = self.model.create_multimodal_processor()
                 self.tokenizer_stream = self.processor.create_stream()
-            else:
-                # For macOS, we don't download at install time (yet). We download at runtime
+
+            elif use_MLX:   # macOS on Apple silicon.
+
+                # Hardcoded in MLX code
+                # repo = "microsoft/Phi-3-vision-128k-instruct"
+
+                self.device                = device
+                self.model_path            = model_dir
+                self.model, self.processor = load(model_path=model_dir, adapter_path=None)
+
+            else:           # macOS Intel
+                
+                # For macOS (intel), we don't download at install time (yet). We download at runtime
                 # TBD: Download model in installer, load the model here. If download 
                 #      and load fail, fall through to download-at-runtime
                 raise
 
         except Exception as ex:
-            if use_ONNX:
+            if use_ONNX or use_MLX:
                 # No luck loading what we downloaded
                 self.model      = None
                 self.processor  = None
@@ -145,6 +160,27 @@ class MultiModeLLM:
                 inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 
                 del generator
+
+            elif use_MLX:
+               
+                # Using phi_3_vision_mlx v0.0.2
+                # https://github.com/JosefAlbers/Phi-3-Vision-MLX/tree/v0.0.2-beta
+                start_inference_time = time.perf_counter()
+                response = generate(self.model, self.processor, prompt, [image])
+                inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
+
+                # Using latest phi_3_vision_mlx
+                # import os
+                # temp_name="onnx_genai_temp_image.png"
+                # image.save(temp_name)
+                #
+                # agent = Agent()
+                # start_inference_time = time.perf_counter()
+                # response = agent(prompt, images=[temp_name])
+                # inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
+                # agent.end()
+                #
+                # os.remove(temp_name)
 
             else:           
                 inputs = self.processor(prompt, image, return_tensors="pt").to(self.device)
