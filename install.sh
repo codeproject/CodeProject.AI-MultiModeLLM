@@ -30,8 +30,10 @@ if [ "$moduleInstallErrors" = "" ]; then
 
     if [ "$os" = "macos" ]; then
 
-        oneStepPIP=false  # Makes dealing with Numpy so much easier.
-
+        if [ "${platform}" = "macos-arm64" ]; then
+            oneStepPIP=false  # Makes dealing with Numpy so much easier.
+        fi
+        
         phi3_sourceUrl="..."
         phi3_fileToGet="..."
         # brew install git-lfs
