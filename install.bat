@@ -22,6 +22,8 @@ if "!cuda_version!" == "11.8"     set useCUDA=true
 
 if "!useCUDA!" == "true" (
 
+    call "!utilsScript!" WriteLine "Confirming VC++ Redist package installation"
+    
     set "RequiredVCRedistVersion=14.40.33810.00"
     call "!utilsScript!" GetVCredistVersion "64-bit"
     if "!VCredistVersion!" NEQ "!RequiredVCRedistVersion!" (

@@ -163,24 +163,18 @@ class MultiModeLLM:
 
             elif use_MLX:
                
+                start_inference_time = time.perf_counter()
+
                 # Using phi_3_vision_mlx v0.0.2
                 # https://github.com/JosefAlbers/Phi-3-Vision-MLX/tree/v0.0.2-beta
-                start_inference_time = time.perf_counter()
                 response = generate(self.model, self.processor, prompt, [image])
-                inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 
                 # Using latest phi_3_vision_mlx
-                # import os
-                # temp_name="onnx_genai_temp_image.png"
-                # image.save(temp_name)
-                #
                 # agent = Agent()
-                # start_inference_time = time.perf_counter()
-                # response = agent(prompt, images=[temp_name])
-                # inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
+                # response = agent(prompt, images=[image])
                 # agent.end()
-                #
-                # os.remove(temp_name)
+
+                inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 
             else:           
                 inputs = self.processor(prompt, image, return_tensors="pt").to(self.device)
