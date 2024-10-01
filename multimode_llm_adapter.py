@@ -13,17 +13,17 @@ from PIL import Image
 # Import CodeProject.AI SDK
 from codeproject_ai_sdk import RequestData, ModuleRunner, ModuleOptions, LogMethod, LogVerbosity, JSON
 
-from multimode_llm import MultiModeLLM, use_ONNX, use_MLX
+from multimode_llm import MultiModeLLM, accel_mode
 
 class MultiModeLLM_adapter(ModuleRunner):
 
     def initialise(self) -> None:
 
-        if use_ONNX:
+        if accel_mode == 'ONNX':
             (cuda_major, cuda_minor) = self.system_info.getCudaVersion
             if cuda_major and (cuda_major >= 12 or (cuda_major == 11 and cuda_minor == 8)) :
                 self.inference_device  = "GPU"
-                self.inference_library = "CUDA"
+                self.inference_library = "ONNX/CUDA"
                 self.device            = "cuda"
                 self.model_repo        = "microsoft/Phi-3-vision-128k-instruct-onnx-cuda"
                 self.model_filename    = None # "Phi-3-vision-128k-instruct.gguf"
@@ -36,13 +36,15 @@ class MultiModeLLM_adapter(ModuleRunner):
                 self.model_repo        = "microsoft/Phi-3-vision-128k-instruct-onnx-cpu"
                 self.model_filename    = None # "Phi-3-vision-128k-instruct.gguf"
                 self.models_dir        = "cpu-int4-rtn-block-32-acc-level-4"
-        elif use_MLX:
+
+        elif accel_mode == 'MLX':           # macOS
             self.inference_device  = "GPU"
             self.inference_library = "MLX"
             self.device            = "mps"
             self.model_repo        = "microsoft/Phi-3.5-vision-instruct"
             self.model_filename    = None # "Phi-3.5-vision-instruct.gguf"
             self.models_dir        = "models"
+
         else:
             print("*** Multi-modal LLM using CPU only: This module requires > 16Gb RAM")
             # If only...
@@ -55,25 +57,32 @@ class MultiModeLLM_adapter(ModuleRunner):
             self.model_repo       = "microsoft/Phi-3-vision-128k-instruct"
             self.model_filename    = None # "Phi-3-vision-128k-instruct.gguf"
             self.models_dir       = "./models"
-            
-        verbose = self.log_verbosity != LogVerbosity.Quiet
-        self.multimode_chat = MultiModeLLM(model_repo=self.model_repo,
-                                           filename=self.model_filename,
-                                           model_dir=os.path.join(ModuleOptions.module_path,self.models_dir),
-                                           device=self.device, 
-                                           inference_library=self.inference_library,
-                                           verbose=verbose)
-        
-        if self.multimode_chat.model_path:
-            self.log(LogMethod.Info|LogMethod.Server, {
-                "message": f"Using model from '{self.multimode_chat.model_path}'",
-                "loglevel": "information"
-            })
-        else:
+
+
+        if self._performing_self_test and self.device == "cpu":
             self.log(LogMethod.Error|LogMethod.Server, {
-                "message": f"Unable to load Multi-mode model",
+                "message": f"Unable to perform self-text without acceleration",
                 "loglevel": "error"
             })
+        else:        
+            verbose = self.log_verbosity != LogVerbosity.Quiet
+            self.multimode_chat = MultiModeLLM(model_repo=self.model_repo,
+                                            filename=self.model_filename,
+                                            model_dir=os.path.join(ModuleOptions.module_path,self.models_dir),
+                                            device=self.device, 
+                                            inference_library=self.inference_library,
+                                            verbose=verbose)
+            
+            if self.multimode_chat.model_path:
+                self.log(LogMethod.Info|LogMethod.Server, {
+                    "message": f"Using model from '{self.multimode_chat.model_path}'",
+                    "loglevel": "information"
+                })
+            else:
+                self.log(LogMethod.Error|LogMethod.Server, {
+                    "message": f"Unable to load Multi-mode model",
+                    "loglevel": "error"
+                })
 
         self.reply_text  = ""
         self.cancelled   = False
@@ -113,7 +122,7 @@ class MultiModeLLM_adapter(ModuleRunner):
         error = None
 
         try:
-            if use_ONNX:
+            if accel_mode == 'ONNX':
                 (generator, tokenizer_stream) = self.multimode_chat.do_chat(user_prompt, image,
                                                                             system_prompt,
                                                                             max_tokens=max_tokens,
@@ -196,6 +205,9 @@ class MultiModeLLM_adapter(ModuleRunner):
 
     def selftest(self) -> JSON:
 
+        if accel_mode == None:
+            return { "success": False, "message": "Not performing self-test on CPU due to time taken" }
+        
         request_data = RequestData()
         request_data.queue   = self.queue_name
         request_data.command = "prompt"
@@ -213,7 +225,7 @@ class MultiModeLLM_adapter(ModuleRunner):
         print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
         # print(f"Info: Self-test output for {self.module_id}: {result}")
 
-        return { "success": result['success'], "message": "MulitModal LLM test successful" }
+        return { "success": result['success'], "message": "MultiModal LLM test successful" }
 
 
 if __name__ == "__main__":
