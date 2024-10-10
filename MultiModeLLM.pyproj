@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{d56ca115-830a-4007-bb9b-bf0fc72da9b0}</ProjectGuid>
+    <ProjectGuid>{5b8c2893-3a8c-403e-abff-9acb33436c75}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <StartupFile>multimode-llm_adapter.py</StartupFile>
     <SearchPath>..\..\SDK\Python;bin\windows\python39\venv\Lib\site-packages</SearchPath>
