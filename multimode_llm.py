@@ -4,12 +4,17 @@ import sys
 
 from PIL import Image
 
-use_ONNX = sys.platform != 'darwin' 
-use_MLX  = sys.platform == 'darwin' and "ARM64" in platform.uname().version
+accel_mode = None
+if sys.platform == 'darwin':
+    if "ARM64" in platform.uname().version:
+        accel_mode = 'MLX'
+else:
+    accel_mode = 'ONNX'
 
-if use_ONNX:
+
+if accel_mode == 'ONNX':
     import onnxruntime_genai as og
-elif use_MLX:
+elif accel_mode == 'MLX':
     from phi_3_vision_mlx import generate, load
 else:
     from transformers import AutoModelForCausalLM, AutoProcessor, AutoConfig
@@ -32,7 +37,7 @@ class MultiModeLLM:
         self.model_path = None
 
         try:
-            if use_ONNX:    # Non macOS
+            if accel_mode == 'ONNX':        # Non macOS
                 
                 # For ONNX, we download the models at install time
                 self.device           = device
@@ -41,7 +46,7 @@ class MultiModeLLM:
                 self.processor        = self.model.create_multimodal_processor()
                 self.tokenizer_stream = self.processor.create_stream()
 
-            elif use_MLX:   # macOS on Apple silicon.
+            elif accel_mode == 'MLX':       # macOS, Apple Silicon.
 
                 # Hardcoded in MLX code
                 # repo = "microsoft/Phi-3-vision-128k-instruct"
@@ -50,16 +55,18 @@ class MultiModeLLM:
                 self.model_path            = model_dir
                 self.model, self.processor = load(model_path=model_dir, adapter_path=None)
 
-            else:           # macOS Intel
-                
+            else:                           # macOS, Numpy, not MLX
                 # For macOS (intel), we don't download at install time (yet). We download at runtime
                 # TBD: Download model in installer, load the model here. If download 
                 #      and load fail, fall through to download-at-runtime
                 raise
 
         except Exception as ex:
-            if use_ONNX or use_MLX:
-                # No luck loading what we downloaded
+            # A general fall-through for the case where ONNX or MLX model loading failed, or where
+            # we only have non-GPU accelerated libraries (macOS on Intel) to use.
+
+            if accel_mode == 'ONNX' or accel_mode == 'MLX':
+                # We tried, but failed, and we won't fallback to CPU here (Could but won't).
                 self.model      = None
                 self.processor  = None
                 self.model_path = None
@@ -124,7 +131,7 @@ class MultiModeLLM:
 
         inferenceMs = 0
         try:
-            if use_ONNX:
+            if accel_mode == 'ONNX':
                 
                 # ONNX genai API doesn't (yet) provide the means to load an image
                 # from memory https://github.com/microsoft/onnxruntime-genai/issues/777
@@ -161,7 +168,7 @@ class MultiModeLLM:
 
                 del generator
 
-            elif use_MLX:
+            elif accel_mode == 'MLX':
                
                 start_inference_time = time.perf_counter()
 
@@ -197,7 +204,7 @@ class MultiModeLLM:
                 "inferenceMs": 0
             }
 
-        if not use_ONNX and self.device == "cuda":
+        if not accel_mode == 'ONNX' and self.device == "cuda":
             try:
                 import torch
                 torch.cuda.empty_cache()
