@@ -20,6 +20,18 @@ set useCUDA=false
 if "!cuda_major_version!" == "12" set useCUDA=true
 if "!cuda_version!" == "11.8"     set useCUDA=true
 
+call "!utilsScript!" Write "Checking for the CUDA Toolkit..." 
+if "!hasCUDAToolkit!" == "false" (
+    call "!utilsScript!" WriteLine
+    call "!utilsScript!" WriteLine "** WARNING: This module requires the CUDA Toolkit to be installed." !color_error!
+    call "!utilsScript!" WriteLine "            The toolkit can be downloaded and installed from NVIDIA:" !color_error!
+    call "!utilsScript!" WriteLine "            https://developer.nvidia.com/cuda-downloads?target_os=Windows " !color_error!
+    call "!utilsScript!" WriteLine
+    set useCUDA=false
+) else (
+    call "!utilsScript!" WriteLine "All good" !color_success!
+)
+
 if "!useCUDA!" == "true" (
 
     call "!utilsScript!" WriteLine "Confirming VC++ Redist package installation"
