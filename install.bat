@@ -26,7 +26,8 @@ if "!useCUDA!" == "true" (
     
     set "RequiredVCRedistVersion=14.40.33810.00"
     call "!utilsScript!" GetVCredistVersion "64-bit"
-    if "!VCredistVersion!" NEQ "!RequiredVCRedistVersion!" (
+    call :compareVersions "!VCredistVersion!" "!RequiredVCRedistVersion!"
+    if !compareResult! LSS 0 (
         set moduleInstallErrors=VC++ redist !RequiredVCRedistVersion! is not installed. Please download and install from https://aka.ms/vs/17/release/vc_redist.x64.exe
     )
     
@@ -37,7 +38,9 @@ if "!useCUDA!" == "true" (
     set "phi3_folder=cpu-int4-rtn-block-32-acc-level-4"
 )
 
-winget install -e --id GitHub.GitLFS
+REM Ensure Git LFS is installed
+git lfs --version >nul 2>&1
+if errorlevel 1 winget install -e --id GitHub.GitLFS
 
 set HF_HUB_DISABLE_SYMLINKS_WARNING=1
 
@@ -49,6 +52,6 @@ if exist "!moduleDirPath!\!phi3_folder!" (
 ) else (
     call "!utilsScript!" Write "downloading..."
     call "!utilsScript!" InstallPythonPackagesByName "huggingface-hub[cli]"
-    !venvPythonCmdPath! !packagesDirPath!\huggingface_hub\commands\huggingface_cli.py download !phi3_fileId! --include !phi3_folder!\* --local-dir .
+    !venvPythonCmdPath! !packagesDirPath!\huggingface_hub\commands\huggingface_cli.py download !phi3_fileId! --include !phi3_folder!\* --local-dir "!moduleDirPath!\!phi3_folder!"
     call "!utilsScript!" WriteLine "Done." "!color_success!"
 )
