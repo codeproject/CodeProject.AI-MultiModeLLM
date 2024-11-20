@@ -123,11 +123,13 @@ class MultiModeLLM_adapter(ModuleRunner):
 
         try:
             if accel_mode == 'ONNX':
-                (generator, tokenizer_stream, response) = self.multimode_chat.do_chat(user_prompt, image,
-                                                                            system_prompt,
-                                                                            max_tokens=max_tokens,
-                                                                            temperature=temperature,
-                                                                            stream=True)
+                (generator,
+                 tokenizer_stream,
+                  response)        = self.multimode_chat.do_chat(user_prompt, image,
+                                                                 system_prompt,
+                                                                 max_tokens=max_tokens,
+                                                                temperature=temperature,
+                                                                stream=True)
                 if generator:
                     while not generator.is_done():
                         if self.cancelled:

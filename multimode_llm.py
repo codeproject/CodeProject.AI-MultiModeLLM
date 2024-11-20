@@ -141,7 +141,7 @@ class MultiModeLLM:
                 if image:
                     import os
                     temp_name="onnx_genai_temp_image.png"
-                    image.save(temp_name)
+                    image.save(temp_name, icc_profile=None)
                     og_image = og.Images.open(temp_name)
                     os.remove(temp_name)
                 else:

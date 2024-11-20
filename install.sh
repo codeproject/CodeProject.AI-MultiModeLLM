@@ -46,6 +46,9 @@ if [ "$moduleInstallErrors" = "" ]; then
             
             phi3_folder="cuda-int4-rtn-block-32"
             phi3_fileId="microsoft/Phi-3-vision-128k-instruct-onnx-cuda"
+
+            # We need libcublasLt.so.11, but CUDA 12 comes standard with libcublasLt.so.12
+            # installAptPackages "libcublas11"
         else
 
             # Linux CPU
