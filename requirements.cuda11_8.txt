@@ -1,6 +1,7 @@
 #! Python3.10
 
 numpy                         # Installing NumPy, a package for scientific computing
+
 # --pre
 --index-url=https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-genai/pypi/simple/
 onnxruntime-genai-cuda        # Installing onnxruntime-genai for CUDA, the ONNX Runtime generate() API

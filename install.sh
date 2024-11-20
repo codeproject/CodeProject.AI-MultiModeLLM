@@ -40,10 +40,14 @@ if [ "$moduleInstallErrors" = "" ]; then
 
     else
         if [ "${hasCUDA}" = true ]; then
+
             # Linux CUDA
+            oneStepPIP=false
+            
             phi3_folder="cuda-int4-rtn-block-32"
             phi3_fileId="microsoft/Phi-3-vision-128k-instruct-onnx-cuda"
         else
+
             # Linux CPU
             phi3_fileId="microsoft/Phi-3-vision-128k-instruct-onnx-cpu"
             phi3_folder="cpu-int4-rtn-block-32-acc-level-4"
