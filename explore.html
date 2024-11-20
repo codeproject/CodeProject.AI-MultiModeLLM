@@ -115,7 +115,7 @@ RULES AND CONVENTIONS
                 </div>
                 <div class="input-group mt-1">
                     <input class="col form-control btn-light" id="_MID_image" type="file" style="width:100%"
-                            onchange="return previewImage(this)" />
+                            onchange="previewImage(this)" />
                 </div>
             </div>
 
@@ -187,8 +187,8 @@ RULES AND CONVENTIONS
                     ['temperature',   temperature]
                 ];
 
-    			showPreviewImage(fileChooser.files[0]);
-	    		let images = [fileChooser.files[0]];
+    			previewImage(fileChooser);
+	    		let images = fileChooser.files ? [ fileChooser.files[0] ] : [];
 
                 setResultsHtml("Sending prompt and image...");
                 let data = await submitRequest('text', 'multimodal-chat', images, params)
@@ -279,7 +279,6 @@ RULES AND CONVENTIONS
 
             // =====================================================================
             // Startup
-
 
             // END EXPLORER SCRIPT
         </script>

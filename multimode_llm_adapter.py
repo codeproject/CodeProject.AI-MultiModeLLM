@@ -123,7 +123,7 @@ class MultiModeLLM_adapter(ModuleRunner):
 
         try:
             if accel_mode == 'ONNX':
-                (generator, tokenizer_stream) = self.multimode_chat.do_chat(user_prompt, image,
+                (generator, tokenizer_stream, response) = self.multimode_chat.do_chat(user_prompt, image,
                                                                             system_prompt,
                                                                             max_tokens=max_tokens,
                                                                             temperature=temperature,
@@ -186,7 +186,7 @@ class MultiModeLLM_adapter(ModuleRunner):
 
         except Exception as ex:
             self.report_error(ex, __file__)
-            response = { "success": False, "error": "Unable to generate text" }
+            response = { "success": False, "error": f"Unable to generate text ({ex})" }
 
         return response
     

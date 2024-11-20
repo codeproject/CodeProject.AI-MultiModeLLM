@@ -127,19 +127,25 @@ class MultiModeLLM:
         if not system_prompt:
             system_prompt = "You're a helpful assistant who answers questions the user asks of you concisely and accurately."
 
-        prompt = f"{user_prompt_marker}{image_marker}\n{user_prompt}{prompt_suffix}{assistant_prompt_marker}"
-
+        if image:
+            prompt = f"{user_prompt_marker}{image_marker}\n{user_prompt}{prompt_suffix}{assistant_prompt_marker}"
+        else:
+            prompt = f"{user_prompt_marker}\n{user_prompt}{prompt_suffix}{assistant_prompt_marker}"
+            
         inferenceMs = 0
         try:
             if accel_mode == 'ONNX':
                 
                 # ONNX genai API doesn't (yet) provide the means to load an image
                 # from memory https://github.com/microsoft/onnxruntime-genai/issues/777
-                import os
-                temp_name="onnx_genai_temp_image.png"
-                image.save(temp_name)
-                og_image = og.Images.open(temp_name)
-                os.remove(temp_name)
+                if image:
+                    import os
+                    temp_name="onnx_genai_temp_image.png"
+                    image.save(temp_name)
+                    og_image = og.Images.open(temp_name)
+                    os.remove(temp_name)
+                else:
+                    og_image = None
 
                 inputs = self.processor(prompt, images=og_image)
 
@@ -154,7 +160,13 @@ class MultiModeLLM:
                 # If we're streaming then short circuit here and just return the
                 # generator. NOTE: the caller will need to del the generator
                 if stream:
-                    return (generator, self.tokenizer_stream)
+                    return (generator, self.tokenizer_stream, {
+                        "success": True, 
+                        "reply": response,
+                        "stop_reason": "None",
+                        "processMs" : int((time.perf_counter() - start_process_time) * 1000),
+                        "inferenceMs" : 0
+                    })
                 
                 while not generator.is_done():
                     generator.compute_logits()
@@ -196,6 +208,15 @@ class MultiModeLLM:
                                                        clean_up_tokenization_spaces=False)[0]
     
         except Exception as ex:
+            if accel_mode == 'ONNX':
+                return (None, None, {
+                    "success": False, 
+                    "error": str(ex),
+                    "stop_reason": "Exception",
+                    "processMs": int((time.perf_counter() - start_process_time) * 1000),
+                    "inferenceMs": 0
+                })
+            
             return {
                 "success": False, 
                 "error": str(ex),

@@ -64,6 +64,6 @@ if exist "!moduleDirPath!\!phi3_folder!" (
 ) else (
     call "!utilsScript!" Write "downloading..."
     call "!utilsScript!" InstallPythonPackagesByName "huggingface-hub[cli]"
-    !venvPythonCmdPath! !packagesDirPath!\huggingface_hub\commands\huggingface_cli.py download !phi3_fileId! --include !phi3_folder!\* --local-dir "!moduleDirPath!\!phi3_folder!"
+    !venvPythonCmdPath! !packagesDirPath!\huggingface_hub\commands\huggingface_cli.py download !phi3_fileId! --include !phi3_folder!\* --local-dir "!moduleDirPath!"
     call "!utilsScript!" WriteLine "Done." "!color_success!"
 )
