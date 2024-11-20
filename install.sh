@@ -57,7 +57,7 @@ if [ "$moduleInstallErrors" = "" ]; then
         if [ ! -d "${moduleDirPath}/${phi3_folder}/" ]; then
             write "downloading..."
             installPythonPackagesByName "huggingface-hub[cli]"
-            ${venvPythonCmdPath} ${packagesDirPath}/huggingface_hub/commands/huggingface_cli.py download ${phi3_fileId} --include ${phi3_folder}\* --local-dir .
+            ${venvPythonCmdPath} ${packagesDirPath}/huggingface_hub/commands/huggingface_cli.py download ${phi3_fileId} --include ${phi3_folder}\* --local-dir "${moduleDirPath}"
             # huggingface-cli download ${phi3_fileId} --include ${phi3_folder}/* --local-dir .
             writeLine "Done." "$color_success"
         else
