@@ -214,12 +214,14 @@ class MultiModeLLM_adapter(ModuleRunner):
         request_data.queue   = self.queue_name
         request_data.command = "prompt"
 
-        request_data.add_value("prompt", "What is shown in this image?")
+        # file_name = os.path.join("test", "home-office.jpg")
+        # request_data.add_file(file_name)
+        # request_data.add_value("prompt", "What is shown in this image?")
+
+        request_data.add_value("prompt", "Please tell me a joke")
+
         request_data.add_value("max_tokens", 1024)
         request_data.add_value("temperature", 0.2)
-
-        file_name = os.path.join("test", "home-office.jpg")
-        request_data.add_file(file_name)
 
         # result = self.process(request_data)
         result = self.long_process(request_data)
