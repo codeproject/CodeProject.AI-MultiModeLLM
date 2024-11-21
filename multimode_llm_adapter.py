@@ -59,7 +59,7 @@ class MultiModeLLM_adapter(ModuleRunner):
             self.models_dir       = "./models"
 
 
-        if self._performing_self_test and self.device == "cpu":
+        if False and self._performing_self_test and self.device == "cpu":
             self.log(LogMethod.Error|LogMethod.Server, {
                 "message": f"Unable to perform self-text without acceleration",
                 "loglevel": "error"
@@ -67,11 +67,11 @@ class MultiModeLLM_adapter(ModuleRunner):
         else:        
             verbose = self.log_verbosity != LogVerbosity.Quiet
             self.multimode_chat = MultiModeLLM(model_repo=self.model_repo,
-                                            filename=self.model_filename,
-                                            model_dir=os.path.join(ModuleOptions.module_path,self.models_dir),
-                                            device=self.device, 
-                                            inference_library=self.inference_library,
-                                            verbose=verbose)
+                                               filename=self.model_filename,
+                                               model_dir=os.path.join(ModuleOptions.module_path,self.models_dir),
+                                               device=self.device, 
+                                               inference_library=self.inference_library,
+                                               verbose=verbose)
             
             if self.multimode_chat.model_path:
                 self.log(LogMethod.Info|LogMethod.Server, {
