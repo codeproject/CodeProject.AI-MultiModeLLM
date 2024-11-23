@@ -13,7 +13,7 @@
         "License": "MIT",
         "LicenseUrl": "https://huggingface.co/microsoft/Phi-3-vision-128k-instruct/resolve/main/LICENSE",
         "Author": "Chris Maunder",
-        "Homepage": "https://https://github.com/codeproject/CodeProject.AI-Server/",
+        "Homepage": "https://github.com/codeproject/CodeProject.AI-Server/",
         "BasedOn": "chat-with-phi-3-vision",
         "BasedOnUrl": "https://huggingface.co/microsoft/Phi-3-vision-128k-instruct/blob/main/sample_inference.py"
       },
