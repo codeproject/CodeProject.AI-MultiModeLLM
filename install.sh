@@ -31,7 +31,8 @@ if [ "$moduleInstallErrors" = "" ]; then
     if [ "$os" = "macos" ]; then
 
         if [ "${platform}" = "macos-arm64" ]; then
-            oneStepPIP=false  # Makes dealing with Numpy so much easier.
+            # Safer, since a fail in a bizarre dependency won't skuttle the lot.
+            oneStepPIP=false
         fi
         
         phi3_sourceUrl="..."
@@ -42,6 +43,8 @@ if [ "$moduleInstallErrors" = "" ]; then
         if [ "${hasCUDA}" = true ]; then
 
             # Linux CUDA
+            
+            # Safer, since a fail in a bizarre dependency won't skuttle the lot.
             oneStepPIP=false
             
             phi3_folder="cuda-int4-rtn-block-32"
